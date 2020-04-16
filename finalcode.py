@@ -24,7 +24,7 @@ R0 =  0
 # Everyone else, S0, is susceptible to infection initially.
 S0 = N - I0 - E0 - R0
 # Contact rate, beta, and mean recovery rate, gamma, (in 1/days). #CHANGE WORDS HERE
-beta, sigma, gamma = 0.78735, 1/7, 0.154 # sigma = 1/ average duration
+beta, sigma, gamma = 0.78735, 1/7, 0.154 
 # A grid of time points (in days)
 t = np.linspace(0, 160, 160)
 
@@ -80,7 +80,7 @@ Lowering and increasing beta based on
 https://www.businessinsider.com/coronavirus-contagious-r-naught-average-patient-spread-2020-3
 
 '''
-beta, sigma, gamma = 0.5, 1/12, 0.154 # beta is estimated number of contacts per day
+beta, sigma, gamma = 0.5, 1/7, 0.154 # beta is estimated number of contacts per day
 # Initial conditions vector
 y0 = S0, E0, I0, R0
 # Integrate the SIR equations over the time grid, t.
@@ -167,7 +167,7 @@ https://www.telegraph.co.uk/news/2020/03/12/coronavirus-kills-average-185-days/
 18.5 days: average time untill death
 https://www.telegraph.co.uk/news/2020/03/12/coronavirus-kills-average-185-days/
 '''
-beta, sigma, gamma = 0.78735, 1/12, 0.154 # sigma = 1/ average duration
+beta, sigma, gamma = 0.78735, 1/7, 0.154 # sigma = 1/ average duration
 # Initial conditions vector
 y0 = S0, E0, I0, R0
 # Integrate the SIR equations over the time grid, t.
@@ -249,7 +249,7 @@ Part d:
 Lowering and increasing gamma based on
 http://jtd.amegroups.com/article/view/36385/html
 '''
-beta, sigma, gamma = 0.78735, 1/12,0.0721
+beta, sigma, gamma = 0.78735, 1/7,0.0721
 # Initial conditions vector
 y0 = S0, E0, I0, R0
 # Integrate the SIR equations over the time grid, t.
@@ -289,7 +289,7 @@ maxCases6 = max(I)
 
 
 
-beta, sigma, gamma = 0.78735, 1/12, 0.238
+beta, sigma, gamma = 0.78735, 1/7, 0.238
 
 # Initial conditions vector
 y0 = S0, E0, I0, R0
@@ -334,8 +334,8 @@ maxCases7 = max(I)
 # secant method to optimize 
 
 
-TrueDeaths = [0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,2,2,2,3]
-TrueInfected = [1,2,2,2,6,-7,-8,-8,8,8,8,15,15,15,16,16,17,18,19,24,25,30, 31,31,33]
+TrueDeaths = [0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,2,2,2,3, 3]
+TrueInfected = [1,2,2,2,6,-7,-8,-8,8,8,8,15,15,15,16,16,17,18,19,24,25,30, 31,31,33, 40]
 TrueDays = np.linspace(0, len(TrueDeaths), len(TrueDeaths))
 
 
