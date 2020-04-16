@@ -1,6 +1,8 @@
 import math
 import numpy as np
 from scipy.integrate import odeint
+from scipy.optimize import minimize
+from scipy import integrate
 import matplotlib.pyplot as plt
 '''
 Question 1: Seing How Changing Different Parameters Affects the Day Gap, The height of the I curve
@@ -11,7 +13,7 @@ and the amount of days untill the peak in case
 
 '''
 Part a:
-Using good estimates for the parameters provided by:
+Using good estimates for the parameters provided by a variety of different sources:
 
 '''
 
@@ -24,7 +26,7 @@ R0 =  0
 # Everyone else, S0, is susceptible to infection initially.
 S0 = N - I0 - E0 - R0
 # Contact rate, beta, and mean recovery rate, gamma, (in 1/days). #CHANGE WORDS HERE
-beta, sigma, gamma = 0.78735, 1/7, 0.154 
+beta, sigma, gamma = 0.78735, 1/7, 0.154 # sigma = 1/ average duration
 # A grid of time points (in days)
 t = np.linspace(0, 160, 160)
 
@@ -58,7 +60,7 @@ ax.plot(t, S/1000, 'b', alpha=0.5, lw=2, label='Susceptible')
 ax.plot(t, E/1000, 'y', alpha=0.5, lw=2, label='Exposed')
 ax.plot(t, I/1000, 'm', alpha=0.5, lw=2, label='Infected')
 ax.plot(t, R/1000, 'g', alpha=0.5, lw=2, label='Recovered with immunity or Dead')
-ax.plot(t, Dead1/1000, 'p', alpha=0.5, lw=2, label='Dead')
+ax.plot(t, Dead1/1000, linestyle='--', alpha=0.5, lw=2, label='Dead')
 
 ax.set_xlabel('Time /days')
 ax.set_ylabel('Number (1000s)')
@@ -102,7 +104,7 @@ ax.plot(t, S/1000, 'b', alpha=0.5, lw=2, label='Susceptible')
 ax.plot(t, E/1000, 'y', alpha=0.5, lw=2, label='Exposed')
 ax.plot(t, I/1000, 'm', alpha=0.5, lw=2, label='Infected')
 ax.plot(t, R/1000, 'g', alpha=0.5, lw=2, label='Recovered with immunity or Dead')
-ax.plot(t, Dead2/1000, 'p', alpha=0.5, lw=2, label='Dead')
+ax.plot(t, Dead2/1000, linestyle='--', alpha=0.5, lw=2, label='Dead')
 
 ax.set_xlabel('Time /days')
 ax.set_ylabel('Number (1000s)')
@@ -118,7 +120,7 @@ maxIday2 = Ilist.index(max(I))
 dayGap2 = maxIday2 - maxEday2
 maxDeath2 = max(Dead2)
 maxCases2 = max(I)
-beta, sigma, gamma = 2, 1/12, 0.154
+beta, sigma, gamma = 2, 1/7, 0.154
 # Initial conditions vector
 y0 = S0, E0, I0, R0
 # Integrate the SIR equations over the time grid, t.
@@ -140,7 +142,7 @@ ax.plot(t, S/1000, 'b', alpha=0.5, lw=2, label='Susceptible')
 ax.plot(t, E/1000, 'y', alpha=0.5, lw=2, label='Exposed')
 ax.plot(t, I/1000, 'm', alpha=0.5, lw=2, label='Infected')
 ax.plot(t, R/1000, 'g', alpha=0.5, lw=2, label='Recovered with immunity or Dead')
-ax.plot(t, Dead3/1000, 'p', alpha=0.5, lw=2, label='Dead')
+ax.plot(t, Dead3/1000, linestyle='--', alpha=0.5, lw=2, label='Dead')
 
 ax.set_xlabel('Time /days')
 ax.set_ylabel('Number (1000s)')
@@ -167,7 +169,7 @@ https://www.telegraph.co.uk/news/2020/03/12/coronavirus-kills-average-185-days/
 18.5 days: average time untill death
 https://www.telegraph.co.uk/news/2020/03/12/coronavirus-kills-average-185-days/
 '''
-beta, sigma, gamma = 0.78735, 1/7, 0.154 # sigma = 1/ average duration
+beta, sigma, gamma = 0.78735, 1/12, 0.154 # sigma = 1/ average duration
 # Initial conditions vector
 y0 = S0, E0, I0, R0
 # Integrate the SIR equations over the time grid, t.
@@ -189,7 +191,7 @@ ax.plot(t, S/1000, 'b', alpha=0.5, lw=2, label='Susceptible')
 ax.plot(t, E/1000, 'y', alpha=0.5, lw=2, label='Exposed')
 ax.plot(t, I/1000, 'm', alpha=0.5, lw=2, label='Infected')
 ax.plot(t, R/1000, 'g', alpha=0.5, lw=2, label='Recovered with immunity or Dead')
-ax.plot(t, Dead4/1000, 'p', alpha=0.5, lw=2, label='Dead')
+ax.plot(t, Dead4/1000, linestyle='--', alpha=0.5, lw=2, label='Dead')
 
 ax.set_xlabel('Time /days')
 ax.set_ylabel('Number (1000s)')
@@ -228,7 +230,7 @@ ax.plot(t, S/1000, 'b', alpha=0.5, lw=2, label='Susceptible')
 ax.plot(t, E/1000, 'y', alpha=0.5, lw=2, label='Exposed')
 ax.plot(t, I/1000, 'm', alpha=0.5, lw=2, label='Infected')
 ax.plot(t, R/1000, 'g', alpha=0.5, lw=2, label='Recovered with immunity or Dead')
-ax.plot(t, Dead5/1000, 'p', alpha=0.5, lw=2, label='Dead')
+ax.plot(t, Dead5/1000, linestyle='--', alpha=0.5, lw=2, label='Dead')
 
 ax.set_xlabel('Time /days')
 ax.set_ylabel('Number (1000s)')
@@ -249,7 +251,7 @@ Part d:
 Lowering and increasing gamma based on
 http://jtd.amegroups.com/article/view/36385/html
 '''
-beta, sigma, gamma = 0.78735, 1/7,0.0721
+beta, sigma, gamma = 0.78735, 1/12,0.0721
 # Initial conditions vector
 y0 = S0, E0, I0, R0
 # Integrate the SIR equations over the time grid, t.
@@ -271,7 +273,7 @@ ax.plot(t, S/1000, 'b', alpha=0.5, lw=2, label='Susceptible')
 ax.plot(t, E/1000, 'y', alpha=0.5, lw=2, label='Exposed')
 ax.plot(t, I/1000, 'm', alpha=0.5, lw=2, label='Infected')
 ax.plot(t, R/1000, 'g', alpha=0.5, lw=2, label='Recovered with immunity or Dead')
-ax.plot(t, Dead6/1000, 'p', alpha=0.5, lw=2, label='Dead')
+ax.plot(t, Dead6/1000, linestyle='--', alpha=0.5, lw=2, label='Dead')
 
 ax.set_xlabel('Time /days')
 ax.set_ylabel('Number (1000s)')
@@ -289,7 +291,7 @@ maxCases6 = max(I)
 
 
 
-beta, sigma, gamma = 0.78735, 1/7, 0.238
+beta, sigma, gamma = 0.78735, 1/12, 0.238
 
 # Initial conditions vector
 y0 = S0, E0, I0, R0
@@ -312,7 +314,7 @@ ax.plot(t, S/1000, 'b', alpha=0.5, lw=2, label='Susceptible')
 ax.plot(t, E/1000, 'y', alpha=0.5, lw=2, label='Exposed')
 ax.plot(t, I/1000, 'm', alpha=0.5, lw=2, label='Infected')
 ax.plot(t, R/1000, 'g', alpha=0.5, lw=2, label='Recovered with immunity or Dead')
-ax.plot(t, Dead7/1000, 'p', alpha=0.5, lw=2, label='Dead')
+ax.plot(t, Dead7/1000, linestyle='--', alpha=0.5, lw=2, label='Dead')
 
 ax.set_xlabel('Time /days')
 ax.set_ylabel('Number (1000s)')
@@ -334,8 +336,128 @@ maxCases7 = max(I)
 # secant method to optimize 
 
 
-TrueDeaths = [0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,2,2,2,3, 3]
-TrueInfected = [1,2,2,2,6,-7,-8,-8,8,8,8,15,15,15,16,16,17,18,19,24,25,30, 31,31,33, 40]
-TrueDays = np.linspace(0, len(TrueDeaths), len(TrueDeaths))
 
+'''
+Question 2:
+Estimating good estimates for the parameters in an SEIR using least squares regression:
 
+'''
+Ddata = [0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,2,2,2,3,3, 3] # Listing real life deaths
+Idata = [1,2,2,2,6,7, 8,8,8,8,8,15,15,15,16,16,17,18,19,24,25,30, 31,31,33,40, 41] # real life infections
+sdata = [11000000]*len(Ddata)
+for i in range(len(Ddata)):
+    sdata[i] = sdata[i] - Ddata[i] -Idata[i] # real life sucpetible
+tdata = np.linspace(0, len(Ddata), len(Ddata)) # time in days
+
+def fitFunc(sir_values, time, beta, sigma, gamma, k): # making function that has the diff eqs for seir model
+    s = sir_values[0]
+    i = sir_values[1]
+    e = sir_values[2]
+    r = sir_values[3]
+    res = np.zeros((4))
+    res[0] = - beta * s * i/N
+    res[1] = beta * s * i/N - sigma * i
+    res[2] = sigma*e - gamma*i
+    res[3] = gamma * i
+    return res
+
+def lsq(model, tdata, Idata, n):
+    """least squares"""
+    time_total = tdata
+    # original record data
+    data_record = Idata
+    # normalize train data
+    k = 1.0/sum(data_record)
+    # init t = 0 values + normalized
+    I0 = data_record[0]*k
+    S0 = 11000000 - I0
+    R0 = 0 
+    N0 = [S0,E0, I0,R0]
+    # Set initial parameter values
+    param_init = [0.75, 0.75, 0.75]
+    param_init.append(k)
+    # fitting
+    param = minimize(sse(model, N0, time_total, k, data_record, n), param_init, method="nelder-mead").x
+    # get the fitted model
+    Nt = integrate.odeint(model, N0, time_total, args=tuple(param))
+    # scale out
+    Nt = np.divide(Nt, k)
+    # Get the second column of data corresponding to I
+    return Nt[:,2]
+
+def sse(model, N0, time_total, k, data_record, n):
+    """sum of square errors"""
+    def result(x):
+        Nt = integrate.odeint(model, N0, time_total[:n], args=tuple(x))
+        INt = [row[2] for row in Nt]
+        INt = np.divide(INt, k)
+        difference = data_record[:n] - INt
+        # square the difference
+        diff = np.dot(difference, difference)
+        return diff
+    return result
+
+result = lsq(fitFunc, tdata, Idata, len(tdata))
+
+# Plot data and fit
+plt.figure()  # open the figure
+fig,ax = plt.subplots()
+ax.plot(tdata, Idata, "o", label = 'Real Time Data') # plot of real time data
+ax.plot(tdata, result, label = 'Line of Best Fit') # plot line of best fit
+ax.set_xlabel('Time (days)')
+ax.set_ylabel('Number of Infections')
+legend = ax.legend(loc = 'upper left')
+plt.title('LSR Graph for Infections')
+plt.savefig('InfectionsLSR.png', bbox_inches ='tight')
+
+###### Least Squares Regression done to Estimate Line of Best Fit for Susceptible
+##
+##def lsq(model, tdata, sdata, n):
+##    """least squares"""
+##    time_total = tdata
+##    # original record data
+##    data_record = sdata
+##    # normalize train data
+##    k = 1.0/sum(data_record)
+##    # init t = 0 values + normalized
+##    I0 = data_record[0]*k
+##    S0 = 11000000 - I0
+##    R0 = 0 
+##    N0 = [S0,E0, I0,R0]
+##    # Set initial parameter values
+##    param_init = [0.75, 0.75, 0.75]
+##    param_init.append(k)
+##    # fitting
+##    param = minimize(sse(model, N0, time_total, k, data_record, n), param_init, method="nelder-mead").x
+##    # get the fitted model
+##    Nt = integrate.odeint(model, N0, time_total, args=tuple(param))
+##    # scale out
+##    Nt = np.divide(Nt, k)
+##    # Get the second column of data corresponding to S
+##    return Nt[:,0]
+##
+##def sse(model, N0, time_total, k, data_record, n):
+##    """sum of square errors"""
+##    def result(x):
+##        Nt = integrate.odeint(model, N0, time_total[:n], args=tuple(x))
+##        INt = [row[0] for row in Nt]
+##        INt = np.divide(INt, k)
+##        difference = data_record[:n] - INt
+##        # square the difference
+##        diff = np.dot(difference, difference)
+##        return diff
+##    return result
+##
+##result = lsq(fitFunc, tdata, sdata, len(tdata))
+##
+##
+### Plot data and fit
+##plt.figure()  # open the figure
+##fig,ax = plt.subplots()
+##ax.plot(tdata, sdata, "ro", label = 'Real Time Data')
+##ax.plot(tdata, result, label = 'Line of Best Fit')
+##ax.set_xlabel('Time (days)')
+##ax.set_ylabel('Number of Susceptible')
+##legend = ax.legend(loc = 'upper left')
+##plt.title('LSR Graph for Susceptible')
+##plt.savefig('SusceptibleLSR.png', bbox_inches ='tight')
