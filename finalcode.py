@@ -345,9 +345,11 @@ Estimating good estimates for the parameters in an SEIR using least squares regr
 Ddata = [0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,2,2,2,3,3, 3] # Listing real life deaths
 Idata = [1,2,2,2,6,7, 8,8,8,8,8,15,15,15,16,16,17,18,19,24,25,30, 31,31,33,40, 41] # real life infections
 sdata = [11000000]*len(Ddata)
+deathRate = 3/41
 for i in range(len(Ddata)):
     sdata[i] = sdata[i] - Ddata[i] -Idata[i] # real life sucpetible
 tdata = np.linspace(0, len(Ddata), len(Ddata)) # time in days
+
 
 def fitFunc(sir_values, time, beta, sigma, gamma, k): # making function that has the diff eqs for seir model
     s = sir_values[0]
@@ -382,6 +384,7 @@ def lsq(model, tdata, Idata, n):
     Nt = integrate.odeint(model, N0, time_total, args=tuple(param))
     # scale out
     Nt = np.divide(Nt, k)
+    print(param[0], param[1], param[3])
     # Get the second column of data corresponding to I
     return Nt[:,2]
 
@@ -410,54 +413,57 @@ legend = ax.legend(loc = 'upper left')
 plt.title('LSR Graph for Infections')
 plt.savefig('InfectionsLSR.png', bbox_inches ='tight')
 
-###### Least Squares Regression done to Estimate Line of Best Fit for Susceptible
-##
-##def lsq(model, tdata, sdata, n):
-##    """least squares"""
-##    time_total = tdata
-##    # original record data
-##    data_record = sdata
-##    # normalize train data
-##    k = 1.0/sum(data_record)
-##    # init t = 0 values + normalized
-##    I0 = data_record[0]*k
-##    S0 = 11000000 - I0
-##    R0 = 0 
-##    N0 = [S0,E0, I0,R0]
-##    # Set initial parameter values
-##    param_init = [0.75, 0.75, 0.75]
-##    param_init.append(k)
-##    # fitting
-##    param = minimize(sse(model, N0, time_total, k, data_record, n), param_init, method="nelder-mead").x
-##    # get the fitted model
-##    Nt = integrate.odeint(model, N0, time_total, args=tuple(param))
-##    # scale out
-##    Nt = np.divide(Nt, k)
-##    # Get the second column of data corresponding to S
-##    return Nt[:,0]
-##
-##def sse(model, N0, time_total, k, data_record, n):
-##    """sum of square errors"""
-##    def result(x):
-##        Nt = integrate.odeint(model, N0, time_total[:n], args=tuple(x))
-##        INt = [row[0] for row in Nt]
-##        INt = np.divide(INt, k)
-##        difference = data_record[:n] - INt
-##        # square the difference
-##        diff = np.dot(difference, difference)
-##        return diff
-##    return result
-##
-##result = lsq(fitFunc, tdata, sdata, len(tdata))
-##
-##
-### Plot data and fit
-##plt.figure()  # open the figure
-##fig,ax = plt.subplots()
-##ax.plot(tdata, sdata, "ro", label = 'Real Time Data')
-##ax.plot(tdata, result, label = 'Line of Best Fit')
-##ax.set_xlabel('Time (days)')
-##ax.set_ylabel('Number of Susceptible')
-##legend = ax.legend(loc = 'upper left')
-##plt.title('LSR Graph for Susceptible')
-##plt.savefig('SusceptibleLSR.png', bbox_inches ='tight')
+###  Parameters found 
+
+# Total population, N.
+N = 11000000
+# Initial number of infected and recovered individuals, I0 and R0.
+I0 = 2 #beggining date march 19th
+E0 = 0
+R0 =  0
+# Everyone else, S0, is susceptible to infection initially.
+S0 = N - I0 - E0 - R0
+# Contact rate, beta, and mean recovery rate, gamma, (in 1/days). #CHANGE WORDS HERE
+beta, sigma, gamma = .86917642, .14453603, 0.0024153289425848028  
+# A grid of time points (in days)
+t = np.linspace(0, 160, 160)
+
+# The SIR model differential equations.
+def deriv(y, t, N, beta, sigma, gamma):
+    S, E, I, R = y
+    dSdt = -beta * S * I / N
+    dEdt = beta * S * I / N - sigma*E
+    dIdt = sigma*E- gamma * I
+    dRdt = gamma * I
+    return dSdt, dEdt, dIdt, dRdt
+
+# Initial conditions vector
+y0 = S0, E0, I0, R0
+# Integrate the SIR equations over the time grid, t.
+# do it over different parameter values???
+ret = odeint(deriv, y0, t, args=(N, beta, sigma, gamma))# add commas for more parameters
+S, E, I, R = ret.T
+Elist = E.tolist()
+Ilist = I.tolist()
+Dead8 = deathRate*I
+maxEday8 = Elist.index(max(E))
+maxIday8 = Ilist.index(max(I))
+dayGap8 = maxIday8 - maxEday8
+maxDeath8 = max(Dead8)
+maxCases8 = max(I)
+
+print(' The estimated model estimates that %d are dead by the end of the period of 160 days.' %DeadinEnd1)
+print(' The estimated model estimates that %d are recovered by the end of the period of 160 days.' %RecoveredinEnd1)
+
+# Plot the data on three separate curves for S(t), I(t) and R(t)
+plt.figure()  # open the figure
+fig,ax = plt.subplots() 
+ax.plot(t, S, 'b', alpha=0.5, lw=2, label='Susceptible')
+ax.plot(t, E, 'y', alpha=0.5, lw=2, label='Exposed')
+ax.plot(t, I, 'm', alpha=0.5, lw=2, label='Infected')
+ax.plot(t, R, 'g', alpha=0.5, lw=2, label='Recovered with immunity or Dead')
+ax.plot(t, Dead8, linestyle='--', alpha=0.5, lw=2, label='Dead')
+ax.set_xlabel('Time (days)')
+ax.set_ylabel('Population')
+legend = ax.legend(loc = 'upper left')
+plt.savefig('LSRfull.png', bbox_inches ='tight')
