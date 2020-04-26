@@ -13,80 +13,80 @@ Estimating good estimates for the parameters in an SEIR using least squares regr
 '''
 P = 11000000 # current population of haiti
 Rdata = np.matrix([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,2,2,2,3,3,3]) # Listing real life deaths
-Rdata = Rdata/P
+Rdata = Rdata/P # scale down to be proportion
 Idata = np.matrix([1,2,2,2,6,7,8,8,8,8,8,15,15,15,16,16,17,18,19,24,25,30,31,31,33,40,41]) # real life infections
-Idata = Idata/P
+Idata = Idata/P #scale down to be proportion
 (dummy, dataLength) = Rdata.shape
 S = np.zeros(dataLength)# initalize blank datasets
 I = np.zeros(dataLength)
 R = np.zeros(dataLength)
-S[0] = (P-1)/P
-I[0] = 1/P
-R[0] = 1- S.item(0) -I.item(0)
+S[0] = (P-1)/P # all except one are susceptible
+I[0] = 1/P # based on one case
+R[0] = 1- S.item(0) -I.item(0) # all others fit in Recovered categorie
 
 beta = 0.6 # two initial guesses for what beta and gamma might be
 gamma = 1/12 # two initial guesses for what beta and gamma might be
 tau = 0 # because first case is when time=0
-fm = 0
+fm = 0 # initialize the lsr variable
 alpha = .5 # cooling schedule, arbitratily chosen
 T = 100 # intial temperature,arbitratily chosen
-for j in range(10000):
-    for i in range(dataLength-1):
-        dS = -beta*S[i]*I[i]
+for j in range(10000): # going thru 10000 trials
+    for i in range(dataLength-1): # go thru all terms to get lsr
+        dS = -beta*S[i]*I[i] # evaluate derivatives
         dI = beta*S[i]*I[i] - gamma*I[i]
         dR = gamma*I[i]
         I[i+1] = I[i] + dI
         fm += abs((I.item(i+1)-Idata.item(i+1))**2) # square of the error of the fitted model
     deltaBeta = .05 # step size
     deltaGamma = .001 # step size
-    betaOrGamma = random.random()
-    fhat = 0
+    betaOrGamma = random.random() # number btwn 0 or 1 to see which step you will do
+    fhat = 0 # initalizing lsr for new beta or gamma value
     if betaOrGamma< 0.25:
-        betaNew = beta + deltaBeta
+        betaNew = beta + deltaBeta # add to beta
         for i in range(dataLength - 1):
-            dS = -betaNew*S[i]*I[i]
+            dS = -betaNew*S[i]*I[i] # reevaluate derivatives using new beta value
             dI = betaNew*S[i]*I[i] - gamma*I[i]
             dR = gamma*I[i]
             I[i+1] = I[i] + dI
             fhat += abs((I.item(i+1)-Idata.item(i+1))**2) # square of the error of the neighbors model
             if fhat < fm:
-                A = 1
+                A = 1 # ACCEPT
             else:
-                A = math.exp((fm-fhat)/T) # calculation of A is done wrong
+                A = math.exp((fm-fhat)/T) # maybe accept
             acceptanceProbability = random.random() # randomly chose acceptance probability
             if acceptanceProbability< A:
-                fm = fhat
-                beta = betaNew
+                fm = fhat # then we have a new lsr
+                beta = betaNew # and a new beta Value
             else:
               pass
     elif 0.5>betaOrGamma> 0.25:
-        betaNew = beta - deltaBeta
+        betaNew = beta - deltaBeta # then subtract from beta
         for i in range(dataLength - 1):
-            dS = -betaNew*S[i]*I[i]
+            dS = -betaNew*S[i]*I[i] # reevaluate derivatives using new beta value
             dI = betaNew*S[i]*I[i] - gamma*I[i]
             dR = gamma*I[i]
             I[i+1] = I[i] + dI
             fhat += abs((I.item(i+1)-Idata.item(i+1))**2) # square of the error of the neighbors model
             if fhat < fm:
-                A = 1
+                A = 1 # then ACCEPT
             else:
-                A = math.exp((fm-fhat)/T) # calculation of A is done wrong
+                A = math.exp((fm-fhat)/T) # THEN maybe accept
             acceptanceProbability = random.random() # randomly chose acceptance probability
             if acceptanceProbability< A:
-                fm = fhat
-                beta = betaNew
+                fm = fhat # adopt new lsr
+                beta = betaNew # and a new beta value
             else:
               pass
     elif 0.75>betaOrGamma> 0.5:
-        gammaNew = gamma + deltaGamma
+        gammaNew = gamma + deltaGamma  # then add to gamma
         for i in range(dataLength - 1):
-            dS = -beta*S[i]*I[i]
+            dS = -beta*S[i]*I[i] # reeval derivs using new gamma value
             dI = beta*S[i]*I[i] - gammaNew*I[i]
             dR = gammaNew*I[i]
             I[i+1] = I[i] + dI
             fhat += abs((I.item(i+1)-Idata.item(i+1))**2) # square of the error of the neighbors model
             if fhat < fm:
-                A = 1
+                A = 1 # accept
             else:
                 A = math.exp((fm-fhat)/T) # calculation of A is done wrong
             acceptanceProbability = random.random() # randomly chose acceptance probability
@@ -96,7 +96,7 @@ for j in range(10000):
             else:
               pass
     elif 1>betaOrGamma> 0.75:
-        gammaNew = gamma - deltaGamma
+        gammaNew = gamma - deltaGamma # then subtract from gamma
         for i in range(dataLength - 1):
             dS = -beta*S[i]*I[i]
             dI = beta*S[i]*I[i] - gammaNew*I[i]
@@ -106,29 +106,29 @@ for j in range(10000):
             if fhat < fm:
                 A = 1
             else:
-                A = math.exp((fm-fhat)/T) # calculation of A is done wrong
+                A = math.exp((fm-fhat)/T) # maybe accept, calculation of A is done wrong
             acceptanceProbability = random.random() # randomly chose acceptance probability
             if acceptanceProbability< A:
-                fm = fhat
+                fm = fhat # adopt new lsr and new gamma value
                 gamma = gammaNew
             else:
               pass
 print(beta,gamma)
-t =  np.linspace(0, 27, 27)
+t =  np.linspace(0, 27, 27) # make time vector
 S = np.zeros(27)# initalize blank datasets
 I = np.zeros(27)
 R = np.zeros(27)
-S[0] = (P-1)/P
+S[0] = (P-1)/P # first item is certain by assumptions of initial state
 I[0] = 1/P
 R[0] = 1- S.item(0) -I.item(0)
-for i in range(26):
+for i in range(26): # make SIR vectors using new beta and gamma, for all except first term
     dS = - beta*S[i]*I[i]
     dI = beta*S[i]*I[i] - gamma*I[i]
     dR = gamma*I[i]
     S[i+1] = S[i] + dS
     I[i+1] = I[i] + dI
     R[i+1] = R[i] + dR
-    Dead = 3/41 * R
+    Dead = 3/41 * R # using average death rate from the observed data
 # Plot the data on three separate curves for S(t), I(t) and R(t)
 plt.figure()  # open the figure
 fig,ax = plt.subplots()
@@ -141,20 +141,23 @@ ax.set_ylabel('Population')
 legend = ax.legend(loc = 'upper left')
 plt.savefig('SimAnnealing.png', bbox_inches ='tight')
 
+
+## PLOT the data for the observed real time data to get an understanding of the trends before we are
+## certain that this is a good fit
 plt.figure()  # open the figure
 fig,ax = plt.subplots()
 ax.plot(realTime,Idata, 'o')
 plt.savefig('realCurve.png', bbox_inches ='tight')
-beta = .5
-gamma  = 1/30
+beta = .95
+gamma  = 1/20
 t =  np.linspace(0, 160, 160)
 S = np.zeros(160)# initalize blank datasets
 I = np.zeros(160)
 R = np.zeros(160)
-S[0] = (P-1)/P
+S[0] = (P-1)/P # assumptions about the initial state
 I[0] = 1/P
 R[0] = 1- S.item(0) -I.item(0)
-for i in range(159):
+for i in range(159): # calculate vector over 160 days
     dS = - beta*S[i]*I[i]
     dI = beta*S[i]*I[i] - gamma*I[i]
     dR = gamma*I[i]
@@ -165,19 +168,25 @@ for i in range(159):
 # Plot the data on three separate curves for S(t), I(t) and R(t)
 plt.figure()  # open the figure
 fig,ax = plt.subplots()
-realTime = np.linspace(0,dataLength, dataLength)
+realTime = np.linspace(0,dataLength, dataLength) # time vector
 Idata = Idata.transpose()
-deathRate = .034
+deathRate = 3/41 # observed in the data
 Dead = deathRate*I
-ax.plot(t, S, 'b', alpha=0.5, lw=2, label='Susceptible')
+ax.plot(t, S, 'b', alpha=0.5, lw=2, label='Susceptible') # plot all the different lines
 ax.plot(t, I, 'm', alpha=0.5, lw=2, label='Infected')
 ax.plot(t, Dead, 'r', alpha=0.5, lw=2, label='Dead')
 ax.plot(t, R, 'g', alpha=0.5, lw=2, label='Recovered with immunity or Dead')
-ax.set_xlabel('Time (days)')
+ax.set_xlabel('Time (days)') # set label, legend, title
 ax.set_ylabel('Population')
 legend = ax.legend(loc = 'upper left')
-plt.savefig('SimAnnealing160days.png', bbox_inches ='tight')
-Ilist = I.tolist()
-maxIday = Ilist.index(max(I))
-maxDeath = max(Dead) *P
+plt.savefig('SimAnnealing160days.png', bbox_inches ='tight') # save the graph
+Ilist = I.tolist() # reformatting to eliminate bugs
+maxIday = Ilist.index(max(I)) # find day where number of infections is highest
+maxDeath = max(Dead)*P
 maxCases = max(I)*P
+print('On day %d, the number of infections is the highest. ' %maxIday)
+print('The maximum number of deaths is %d. ' %maxDeath)
+print('The maximum number of cases is %d. ' %maxCases)
+
+
+
