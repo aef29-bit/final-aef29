@@ -10,8 +10,32 @@ import random
 Question 2:
 Estimating good estimates for the parameters in an SEIR using least squares regression:
 
-##'''
-P = 11000000 # current population of haiti
+'''
+
+
+#Total population, N.
+P = 11000000
+# Initial number of infected and recovered individuals, I0 and R0.
+I0 = 1/P #beggining date march 19th
+R0 =  0/P
+# Everyone else, S0, is susceptible to infection initially.
+S0 = (P - I0)/P
+beta, gamma = 0.6, 1/12
+# A grid of time points (in days)
+t = np.linspace(0, 27, 27)
+
+# The SIR model differential equations.
+def deriv(y, t, beta, gamma):
+    S, I, R = y
+    dSdt = -beta * S * I
+    dIdt = beta * S * I  - gamma * I
+    dRdt = gamma * I
+    return dSdt, dIdt, dRdt
+
+### Initial conditions vector
+y0 = S0, I0, R0
+### Integrate the SIR equations over the time grid, t.
+### do it over different parameter values???
 Rdata = np.matrix([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,2,2,2,3,3,3]) # Listing real life deaths
 Rdata = Rdata/P # scale down to be proportion
 Idata = np.matrix([1,2,2,2,6,7,8,8,8,8,8,15,15,15,16,16,17,18,19,24,25,30,31,31,33,40,41]) # real life infections
@@ -20,33 +44,24 @@ Idata = Idata/P #scale down to be proportion
 S = np.zeros(dataLength)# initalize blank datasets
 I = np.zeros(dataLength)
 R = np.zeros(dataLength)
-S[0] = (P-1)/P # all except one are susceptible
-I[0] = 1/P # based on one case
-R[0] = 1- S.item(0) -I.item(0) # all others fit in Recovered category
-# keep track of all the errors, started 10,000 trials
-# beta, gamma  = 0.6, 1/12 fn = 8.6651411177292e-11
-# beta, gamma  = 0.9, 1/10 fn = 9.25118160473985e-11, BAD guesses in negatives, higher error
-# # beta, gamma  = 0.5, 1/10 fn = 8.923713165658255e-11 , BAD guesses in negatives, higher error
-# # beta, gamma  = 2, 1/11 fn = 9.139455163446431e-11, BAD guesses in negatives, higher error
-# # beta, gamma  = 1, 1/30 fn = 1.2248778563738362e-10 , BAD guesses in negatives, higher error
-
-
-# with the starting guess, 0.6 and 1/12
-# beta, gamma  =  1.0 0.10133333333333333, lsr = 8.799635676839043e-11
-# if u make that your starting guess, error goes up
-beta = 0.6 # two initial guesses for what beta and gamma might be
-gamma = 1/12 # two initial guesses for what beta and gamma might be
+S[0] = S0 # all except one are susceptible
+I[0] = I0 # based on one case
+R[0] = R0 # all others fit in Recovered category
+# two initial guesses for what beta and gamma might be
+beta, gamma = 0.6, 1/12 # two initial guesses for what beta and gamma might be
 tau = 0 # because first case is when time=0
 fm = 0 # initialize the lsr variable
 T = 100 # intial temperature,arbitratily chosen
 consec = 0
-if consec < 7000:
-    for j in range(10000): # going thru 10000 trials
-        for i in range(dataLength-1): # go thru all terms to get lsr
-            dS = -beta*S[i]*I[i] # evaluate derivatives
-            dI = beta*S[i]*I[i] - gamma*I[i]
-            dR = gamma*I[i]
-            I[i+1] = I[i] + dI
+bestBeta = []
+bestGamma = []
+bestFit = []
+
+for j in range(1000):
+    if consec < 700: # going thru 10000 trials
+        ret = odeint(deriv, y0, t, args=(beta, gamma))# add commas for more parameters
+        S, I, R = ret.T
+        for i in range(dataLength -1):
             fm += abs((I.item(i+1)-Idata.item(i+1))**2) # square of the error of the fitted model
         deltaBeta = .05 # step size
         deltaGamma = .001 # step size
@@ -54,11 +69,9 @@ if consec < 7000:
         fhat = 0 # initalizing lsr for new beta or gamma value
         if betaOrGamma< 0.25:
             betaNew = beta + deltaBeta # add to beta
-            for i in range(dataLength - 1):
-                dS = -betaNew*S[i]*I[i] # reevaluate derivatives using new beta value
-                dI = betaNew*S[i]*I[i] - gamma*I[i]
-                dR = gamma*I[i]
-                I[i+1] = I[i] + dI
+            ret = odeint(deriv, y0, t, args=(betaNew, gamma))# add commas for more parameters
+            S, I, R = ret.T
+            for i in range(dataLength -1):
                 fhat += abs((I.item(i+1)-Idata.item(i+1))**2) # square of the error of the neighbors model
                 if fhat < fm:
                     A = 1 # ACCEPT
@@ -69,20 +82,19 @@ if consec < 7000:
                 if acceptanceProbability< A:
                     fm = fhat # then we have a new lsr
                     beta = betaNew # and a new beta Value
-                    consec = 0
+                    bestBeta.append(beta)
+                    bestGamma.append(gamma)
+                    bestFit.append(fm)
                 else:
                     consec +=1
         elif 0.5>betaOrGamma> 0.25 and beta > 0:  #added to remove all the bad negative estimates
             betaNew = beta - deltaBeta # then subtract from beta
+            ret = odeint(deriv, y0, t, args=(betaNew, gamma))# add commas for more parameters
+            S, I, R = ret.T
             for i in range(dataLength - 1):
-                dS = -betaNew*S[i]*I[i] # reevaluate derivatives using new beta value
-                dI = betaNew*S[i]*I[i] - gamma*I[i]
-                dR = gamma*I[i]
-                I[i+1] = I[i] + dI
                 fhat += abs((I.item(i+1)-Idata.item(i+1))**2) # square of the error of the neighbors model
                 if fhat < fm:
                     A = 1 # then ACCEPT
-                    consec = 0
                 else:
                     A = math.exp((fm-fhat)/T) # THEN maybe accept
                 acceptanceProbability = random.random() # randomly chose acceptance probability
@@ -90,15 +102,16 @@ if consec < 7000:
                     fm = fhat # adopt new lsr
                     beta = betaNew # and a new beta value
                     consec = 0
+                    bestBeta.append(beta)
+                    bestGamma.append(gamma)
+                    bestFit.append(fm)
                 else:
                     consec +=1
         elif 0.75>betaOrGamma> 0.5:
             gammaNew = gamma + deltaGamma  # then add to gamma
+            ret = odeint(deriv, y0, t, args=(beta, gammaNew))# add commas for more parameters
+            S, I, R = ret.T
             for i in range(dataLength - 1):
-                dS = -beta*S[i]*I[i] # reeval derivs using new gamma value
-                dI = beta*S[i]*I[i] - gammaNew*I[i]
-                dR = gammaNew*I[i]
-                I[i+1] = I[i] + dI
                 fhat += abs((I.item(i+1)-Idata.item(i+1))**2) # square of the error of the neighbors model
                 if fhat < fm:
                     A = 1 # accept
@@ -109,16 +122,16 @@ if consec < 7000:
                 if acceptanceProbability< A:
                     fm = fhat
                     gamma = gammaNew
-                    consec = 0
+                    bestBeta.append(beta)
+                    bestGamma.append(gamma)
+                    bestFit.append(fm)
                 else:
                     consec +=1
         elif 1>betaOrGamma> 0.75 and gamma > 0: #added to remove all the bad negative estimates
             gammaNew = gamma - deltaGamma # then subtract from gamma
+            ret = odeint(deriv, y0, t, args=(beta, gammaNew))# add commas for more parameters
+            S, I, R = ret.T
             for i in range(dataLength - 1):
-                dS = -beta*S[i]*I[i]
-                dI = beta*S[i]*I[i] - gammaNew*I[i]
-                dR = gammaNew*I[i]
-                I[i+1] = I[i] + dI
                 fhat += abs((I.item(i+1)-Idata.item(i+1))**2) # square of the error of the neighbors model
                 if fhat < fm:
                     A = 1
@@ -129,26 +142,18 @@ if consec < 7000:
                 if acceptanceProbability< A:
                     fm = fhat # adopt new lsr and new gamma value
                     gamma = gammaNew
-                    consec = 0
+                    bestBeta.append(beta)
+                    bestGamma.append(gamma)
+                    bestFit.append(fm)
                 else:
                     consec +=1
-print(beta,gamma)
-print(fm)
-t =  np.linspace(0, 27, 27) # make time vector
-S = np.zeros(27)# initalize blank datasets
-I = np.zeros(27)
-R = np.zeros(27)
-S[0] = (P-1)/P # first item is certain by assumptions of initial state
-I[0] = 1/P
-R[0] = 1- S.item(0) -I.item(0)
-for i in range(26): # make SIR vectors using new beta and gamma, for all except first term
-    dS = - beta*S[i]*I[i]
-    dI = beta*S[i]*I[i] - gamma*I[i]
-    dR = gamma*I[i]
-    S[i+1] = S[i] + dS
-    I[i+1] = I[i] + dI
-    R[i+1] = R[i] + dR
-    Dead = 3/41 * R # using average death rate from the observed data
+index = bestFit.index(min(bestFit)) # find day where number of infections is highest
+bestBESTbeta = bestBeta[index]
+bestBESTgamma = bestGamma[index]
+print(bestBESTbeta, bestBESTgamma, min(bestFit))
+ret = odeint(deriv, y0, t, args=(bestBESTbeta, bestBESTgamma))# add commas for more parameters
+S, I, R = ret.T
+Dead = 3/41 * R # using average death rate from the observed data
 # Plot the data on three separate curves for S(t), I(t) and R(t)
 plt.figure()  # open the figure
 fig,ax = plt.subplots()
@@ -168,32 +173,19 @@ plt.figure()  # open the figure
 fig,ax = plt.subplots()
 ax.plot(realTime,Idata, 'o')
 plt.savefig('realCurve.png', bbox_inches ='tight')
-t =  np.linspace(0, 160, 160)
-S = np.zeros(160)# initalize blank datasets
-I = np.zeros(160)
-R = np.zeros(160)
-S[0] = (P-1)/P # assumptions about the initial state
-I[0] = 1/P
-R[0] = 1- S.item(0) -I.item(0)
-for i in range(159): # calculate vector over 160 days
-    dS = - beta*S[i]*I[i]
-    dI = beta*S[i]*I[i] - gamma*I[i]
-    dR = gamma*I[i]
-    S[i+1] = S[i] + dS
-    I[i+1] = I[i] + dI
-    R[i+1] = R[i] + dR
-    Dead = 3/41 * R
+T =  np.linspace(0, 160, 160)
+ret = odeint(deriv, y0, T, args=(bestBESTbeta, bestBESTgamma))# add commas for more parameters
+S, I, R = ret.T
+Dead = 3/41 * R # using average death rate from the observed data
 # Plot the data on three separate curves for S(t), I(t) and R(t)
 plt.figure()  # open the figure
 fig,ax = plt.subplots()
 realTime = np.linspace(0,dataLength, dataLength) # time vector
 Idata = Idata.transpose()
-deathRate = 3/41 # observed in the data
-Dead = deathRate*I
-ax.plot(t, S, 'b', alpha=0.5, lw=2, label='Susceptible') # plot all the different lines
-ax.plot(t, I, 'm', alpha=0.5, lw=2, label='Infected')
-ax.plot(t, Dead, 'r', alpha=0.5, lw=2, label='Dead')
-ax.plot(t, R, 'g', alpha=0.5, lw=2, label='Recovered with immunity or Dead')
+ax.plot(T, S, 'b', alpha=0.5, lw=2, label='Susceptible') # plot all the different lines
+ax.plot(T, I, 'm', alpha=0.5, lw=2, label='Infected')
+ax.plot(T, Dead, 'r', alpha=0.5, lw=2, label='Dead')
+ax.plot(T, R, 'g', alpha=0.5, lw=2, label='Recovered with immunity or Dead')
 ax.set_xlabel('Time (days)') # set label, legend, title
 ax.set_ylabel('Population')
 legend = ax.legend(loc = 'upper left')
