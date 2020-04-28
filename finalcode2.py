@@ -64,7 +64,7 @@ ax.plot(iteration[0:15], T[0:15]) # plot
 ax.set_xlabel('Iteration') # set label, legend, title
 ax.set_ylabel('Temperature')
 plt.title('Temperature v Iteration')
-plt.savefig('Temp Graph.png', bbox_inches ='tight') # save the graph
+plt.savefig('TempGraph.png', bbox_inches ='tight') # save the graph
 
 
 consec = 0 # variable to keep track of consecutive failutes
